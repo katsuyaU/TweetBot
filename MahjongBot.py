@@ -5,7 +5,7 @@ import datetime
 import time
 import sys
 
-accont = json.load(open("Mahjong.json"))
+accont = json.load(open("ID.json"))
 AUTH = tweepy.OAuthHandler(accont["consumer_key"] , accont["consumer_secret"])
 AUTH.set_access_token(accont["access_token"] , accont["access_token_secret"])
 TWITTER = tweepy.API(AUTH)
