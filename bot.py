@@ -27,24 +27,34 @@ def tag(tag : str):
 def main():
     with tag("HASHTAG_確認") as log:
         log("#" + sys.argv[1])
+    is_monday_check = False
+    is_sleep_mode = False
     while True:
         now = datetime.now()
-        if now.weekday() == 0: #月曜日のとき
+        if now.weekday() == 0 and not(is_monday_check): #月曜日のとき
+            is_monday_check = True
             print("[RESET]" , file = open("bot.log" , "w"))
             with tag("MONDAY") as log:
                 log("一週間の始まり")
                 log("今週も頑張っていきましょう！")
-        with tag("START") as log:
-            log(now.time())
-        if is_within_a_sleeptime(now.time()):
-            with tag("SLEEP") as log:
-                log("(˘ω˘)ｽﾔｧ({})".format(now))
+        elif now.weekday() != 0:
+            is_monday_check = False
+
+
+        if is_within_a_sleeptime(now):
+            if not is_sleep_mode:
+                is_sleep_mode = True
+                with tag("SLEEP") as log:
+                    log("(˘ω˘)ｽﾔｧ")
             sleep(3 * 3600 )# 3時間
-            with tag("SLEEP") as log:
-                log("(ﾟωﾟ)ﾊｯ({})".format(datetime.now()) )
         else:
+            if is_sleep_mode:
+                with tag("SLEEP") as log:
+                    log("(ﾟωﾟ)ﾊｯ" )
+            with tag("START") as log:
+                log("botを起動")
             try:
-                stream = tweepy.Stream(auth = TWITTER.auth , listener = Listener())
+                stream = tweepy.Stream(auth = TWITTER.auth , listener = Listener()) 
                 stream.userstream()
             except:
                 with tag("ERROR") as log:
@@ -52,9 +62,12 @@ def main():
             finally: #5分
                 sleep(1 * 60 * 5)
 
-def is_within_a_sleeptime(now : time) -> bool:
-    """botがsleeptimeに入っている時間かを確認する"""
-    return time(18) < now or now < time(8)
+def is_within_a_sleeptime(date : datetime) -> bool:
+    """平日午前8時〜午後6時以外の時、または土日のときにTrueを返却"""
+    if date.weekday() in [5 , 6]:
+        return True
+    else:
+        return time(18) < date.time() or date.time() < time(8)
 
 def print_tweet(status : tweepy.Status):
     """最新のツイートをtweet.logに記録する関数"""
@@ -72,7 +85,7 @@ def print_tweet(status : tweepy.Status):
         print("***" , file=log)
 
 def get_status_url(status : tweepy.Status) -> str:
-    return "https://twitter.com/{0}/status/{1}".format( status.user.screen_name ,  status.id)
+    return "https://twitter.com/{0}/status/{1}".format(status.user.screen_name, status.id)
 
 def result_hashtag(hashtags, status : tweepy.Status):
     with tag("CHECK_HASHTAGS") as log:
@@ -91,7 +104,7 @@ class Listener(tweepy.StreamListener):
             hashtags = [json["text"] for json in status.entities["hashtags"] ]
             result_hashtag(hashtags , status)
         print_tweet(status)
-        if is_within_a_sleeptime(datetime.now().time()):
+        if is_within_a_sleeptime(datetime.now()):
             raise Exception("正常に終了")
         return True
     def on_timeout(self):
