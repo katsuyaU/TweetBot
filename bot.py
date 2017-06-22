@@ -10,7 +10,7 @@ from time import sleep
 
 import tweepy
 
-accont = json.load(open("account.json"))
+accont = json.load(open("main_account.json"))
 AUTH = tweepy.OAuthHandler(accont["consumer_key"] , accont["consumer_secret"])
 AUTH.set_access_token(accont["access_token"] , accont["access_token_secret"])
 TWITTER = tweepy.API(AUTH)
@@ -90,7 +90,7 @@ def get_status_url(status : tweepy.Status) -> str:
 def result_hashtag(hashtags, status : tweepy.Status):
     with tag("CHECK_HASHTAGS") as log:
         log(*hashtags)
-        if sys.argv[1] in hashtags:
+        if not (status.retweeted) and sys.argv[1] in hashtags:
             log(sys.argv[1] , "を検出")
             s = "{0}(@{1})さんが鍵を借りました！\n\n{2}".format(status.user.name , status.user.screen_name , get_status_url(status))
             tweet = TWITTER.update_status(s)
